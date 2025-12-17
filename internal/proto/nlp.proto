@@ -1,0 +1,16 @@
+syntax = "proto3";
+package nlp;
+option go_package = "/proto/nlp";
+
+service NLPService {
+    rpc Extract (ExtractRequest) returns (ExtractResponse);
+}
+
+message ExtractRequest {
+    string text=1;
+}
+message ExtractResponse{
+    string intent=1;
+    string time_iso =2;
+    string task=3;
+}
