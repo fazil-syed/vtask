@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/syed.fazil/vtask/internal/proto/nlp"
+	pb "github.com/syed.fazil/vtask/internal/proto/nlp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -21,8 +21,8 @@ func ParseIntent(ctx context.Context, transcription string) Intent {
 		log.Fatalf("failed to connect to nlp service: %v", err)
 	}
 	defer conn.Close()
-	nlpClient := nlp.NewNLPServiceClient(conn)
-	response, err := nlpClient.Extract(ctx, &nlp.ExtractRequest{Text: transcription})
+	nlpClient := pb.NewNLPServiceClient(conn)
+	response, err := nlpClient.Extract(ctx, &pb.ExtractRequest{Text: transcription})
 	if err != nil {
 		log.Fatalf("failed to get the parsed intent: %v", err)
 	}

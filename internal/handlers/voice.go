@@ -1,6 +1,5 @@
 package handlers
 
-// write handlers/voice.go that uses the STTService interface to transcribe an audio file and return the transcription in the response
 import (
 	"net/http"
 	"strings"
@@ -52,7 +51,7 @@ func UploadVoiceNoteHandler(c *gin.Context, db *gorm.DB, sttProvider STTService,
 	}
 	action := gin.H{}
 	switch intent.Name {
-	case "create_task":
+	case "set reminder":
 		task := models.Task{Name: intent.Title, Completed: false}
 		if intent.Reminder != "" {
 			if t, err := utils.ParseTimeString(intent.Reminder); err == nil && t != nil {
@@ -69,7 +68,7 @@ func UploadVoiceNoteHandler(c *gin.Context, db *gorm.DB, sttProvider STTService,
 			return
 		}
 		action = gin.H{"action": "create_task", "task_id": task.ID, "task_name": task.Name}
-	case "mark_done":
+	case "mark as done":
 		var task models.Task
 		norm := strings.ToLower(strings.TrimSpace(intent.Title))
 		err := db.WithContext(c.Request.Context()).Where("lower(name) LIKE ? and completed = ?", "%"+norm+"%", false).Order("created_at desc").First(&task).Error
