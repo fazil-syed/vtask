@@ -29,7 +29,7 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	// auto migrate task model
-	err = db.AutoMigrate(&models.Task{}, &models.VoiceNote{})
+	err = db.AutoMigrate(&models.Task{}, &models.VoiceNote{}, &models.User{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
