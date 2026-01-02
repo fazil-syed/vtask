@@ -15,6 +15,7 @@ func SetupServer(db *gorm.DB, sttProvider handlers.STTService, uploadPath string
 	routes.RegisterTaskRoutes(router, db)
 	// register voice routes
 	routes.RegisterVoiceRoutes(router, db, sttProvider, uploadPath)
+	routes.RegisterAuthRoutes(router, db)
 
 	router.Use(middlewares.MaxUploadSizeMiddleware(int64(maxUploadSize)))
 	router.Use(cors.New(cors.Config{
