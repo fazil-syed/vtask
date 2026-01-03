@@ -17,9 +17,9 @@ func RegisterAuthRoutes(router *gin.Engine, db *gorm.DB) {
 	router.POST("/auth/login", func(c *gin.Context) {
 		handlers.LoginUserHandler(c, db)
 	})
-	// router.GET("/auth/logout", func(ctx *gin.Context) {
-
-	// })
+	router.POST("/auth/logout", middlewares.CheckCurrentUser(), func(c *gin.Context) {
+		handlers.LogoutUserHandler(c, db)
+	})
 	router.GET("/auth/me", middlewares.CheckCurrentUser(), func(c *gin.Context) {
 		handlers.GetUserProfileHandler(c, db)
 	})

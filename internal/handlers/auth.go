@@ -104,6 +104,12 @@ func LoginUserHandler(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }
 
+func LogoutUserHandler(c *gin.Context, db *gorm.DB) {
+	c.SetCookie("auth_token", "", -1, "/", "", false, true)
+	c.Status(http.StatusNoContent)
+	return
+}
+
 func GetUserProfileHandler(c *gin.Context, db *gorm.DB) {
 	dbWithCtx := db.WithContext(c.Request.Context())
 	userID, exists := c.Get("user_id")
