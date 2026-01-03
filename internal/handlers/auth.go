@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -66,4 +67,30 @@ func RegisterUserHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	c.Status(http.StatusCreated)
+}
+func LoginUserHandler(c *gin.Context, db *gorm.DB) {
+	dbWithCtx := db.WithContext(c.Request.Context())
+	var loginUserSchema schemas.UserLoginInputSchema
+	if err := c.ShouldBindJSON(&loginUserSchema); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// check if user exists
+	var identiy models.Identity
+	if err := dbWithCtx.Model(&models.Identity{}).Where("issuer = ? AND email = ?", "password", loginUserSchema.Email).Preload("User").First(&identiy).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	// check if password is correct
+
+	if err := utils.CheckPassword(*identiy.PasswordHash, loginUserSchema.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": identiy.User})
 }

@@ -12,10 +12,10 @@ func RegisterAuthRoutes(router *gin.Engine, db *gorm.DB) {
 	router.POST("/auth/register", func(c *gin.Context) {
 		handlers.RegisterUserHandler(c, db)
 	})
-	// // route to get all tasks
-	// router.GET("/auth/login", func(c *gin.Context) {
-	// 	// handlers.GetTasksHandler(c, db)
-	// })
+	// route to get all tasks
+	router.POST("/auth/login", func(c *gin.Context) {
+		handlers.LoginUserHandler(c, db)
+	})
 	// router.GET("/auth/logout", func(ctx *gin.Context) {
 
 	// })
