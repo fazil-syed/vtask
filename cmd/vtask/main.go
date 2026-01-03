@@ -29,10 +29,15 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	// auto migrate task model
-	err = db.AutoMigrate(&models.Task{}, &models.VoiceNote{}, &models.User{})
+	err = db.AutoMigrate(&models.Task{}, &models.VoiceNote{}, &models.User{}, &models.Identity{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
+	db.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS identities_password_email_unique
+		ON identities (email)
+		WHERE issuer = 'password';
+	`)
 	// initialize stt provider
 	var sttProvider handlers.STTService
 	switch cfg.STTProvider {

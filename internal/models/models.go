@@ -22,10 +22,3 @@ type VoiceNote struct {
 	Status        string `json:"status"`
 	FilePath      string `json:"file_path"`
 }
-
-type User struct {
-	gorm.Model
-	UserName     string `db:"user_name" json:"user_name" gorm:"unique;not null"`
-	Email        string `db:"email" json:"email" gorm:"unique;not null"`
-	PasswordHash string `db:"password_hash" json:"-" gorm:"not null"`
-}
