@@ -48,8 +48,8 @@ func RegisterUserHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	user := models.User{
-		PrimaryEmail: userSchema.Email,
-		UserName:     userSchema.UserName,
+		PrimaryEmail: &userSchema.Email,
+		UserName:     &userSchema.UserName,
 	}
 	if err := dbWithCtx.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -92,5 +92,38 @@ func LoginUserHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": identiy.User})
+	token, err := utils.GenerateToken(identiy.User.PrimaryEmail, identiy.User.UserName, identiy.User.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	// set the cookie
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("auth_token", token, 3600, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+}
+
+func GetUserProfileHandler(c *gin.Context, db *gorm.DB) {
+	dbWithCtx := db.WithContext(c.Request.Context())
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+	var user models.User
+	if err := dbWithCtx.Model(&models.User{}).Where("id = ?", userID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	profile := schemas.UserProfileDataResponse{
+		UserName: user.UserName,
+		Email:    user.PrimaryEmail,
+	}
+	c.JSON(http.StatusOK, profile)
+	return
 }

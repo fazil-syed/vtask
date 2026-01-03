@@ -4,6 +4,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/syed.fazil/vtask/internal/handlers"
+	"github.com/syed.fazil/vtask/internal/middlewares"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +20,7 @@ func RegisterAuthRoutes(router *gin.Engine, db *gorm.DB) {
 	// router.GET("/auth/logout", func(ctx *gin.Context) {
 
 	// })
-	// router.GET("/auth/me", func(ctx *gin.Context) {
-
-	// })
+	router.GET("/auth/me", middlewares.CheckCurrentUser(), func(c *gin.Context) {
+		handlers.GetUserProfileHandler(c, db)
+	})
 }

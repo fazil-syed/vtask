@@ -4,16 +4,20 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/syed.fazil/vtask/internal/handlers"
+	"github.com/syed.fazil/vtask/internal/middlewares"
 	"gorm.io/gorm"
 )
 
 func RegisterTaskRoutes(router *gin.Engine, db *gorm.DB) {
 	// route to create a new task
-	router.POST("/tasks", func(c *gin.Context) {
+
+	taskGroup := router.Group("/tasks")
+	taskGroup.Use(middlewares.CheckCurrentUser())
+	taskGroup.POST("/", func(c *gin.Context) {
 		handlers.CreateTaskHandler(c, db)
 	})
 	// route to get all tasks
-	router.GET("/tasks", func(c *gin.Context) {
+	taskGroup.GET("/", func(c *gin.Context) {
 		handlers.GetTasksHandler(c, db)
 	})
 }
