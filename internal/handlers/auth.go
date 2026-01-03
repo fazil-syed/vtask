@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -20,6 +21,7 @@ func RegisterUserHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	var count int64
+	// Check if identiy/user already exists
 	err := dbWithCtx.Model(&models.Identity{}).Where("issuer = ? AND email = ?", "password", userSchema.Email).Count(&count).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
@@ -27,6 +29,15 @@ func RegisterUserHandler(c *gin.Context, db *gorm.DB) {
 	}
 	if count > 0 {
 		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		return
+	}
+	// Check if username if unique
+	if err := dbWithCtx.Model(&models.User{}).Where("user_name = ?", userSchema.UserName).Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	if count > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("Username %s is already taken", userSchema.UserName)})
 		return
 	}
 
