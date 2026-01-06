@@ -23,4 +23,13 @@ func RegisterAuthRoutes(router *gin.Engine, db *gorm.DB) {
 	router.GET("/auth/me", middlewares.CheckCurrentUser(), func(c *gin.Context) {
 		handlers.GetUserProfileHandler(c, db)
 	})
+
+	// Google SSO route
+	router.GET("/auth/google", func(c *gin.Context) {
+		handlers.InitiateGoogleSSOAuthHandler(c)
+	})
+
+	router.GET("auth/google/callback", func(ctx *gin.Context) {
+		handlers.GoogleSSOCallbackHandler(ctx, db)
+	})
 }

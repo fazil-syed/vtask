@@ -6,22 +6,23 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/syed.fazil/vtask/internal/config"
 )
 
-var jwtSecret = []byte("ksdghksjghkjghkjasdgh")
-
 type JWTClaim struct {
-	UserName string `json:"username"`
-	Email    string `json:"email"`
-	UserID   uint   `json:"user_id"`
+	UserName *string `json:"username"`
+	Email    *string `json:"email"`
+	UserID   uint    `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
 func GenerateToken(email *string, username *string, userID uint) (tokenString string, err error) {
+	jwtSecret := []byte(config.App.JWTSecret)
+
 	expirationTime := time.Now().Add(1 * time.Hour)
 	claims := JWTClaim{
-		Email:    *email,
-		UserName: *username,
+		Email:    email,
+		UserName: username,
 		UserID:   userID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
@@ -33,6 +34,8 @@ func GenerateToken(email *string, username *string, userID uint) (tokenString st
 	return
 }
 func ValidateToken(signedToken string) (tokenData *JWTClaim, err error) {
+	jwtSecret := []byte(config.App.JWTSecret)
+
 	token, err := jwt.ParseWithClaims(signedToken, &JWTClaim{}, func(t *jwt.Token) (any, error) {
 
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {

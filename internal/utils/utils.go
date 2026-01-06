@@ -1,9 +1,14 @@
 package utils
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"crypto/rand"
+	"encoding/base64"
+
+	"golang.org/x/crypto/bcrypt"
+)
 
 func HashPassword(pw string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.MaxCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
 	}
@@ -12,4 +17,9 @@ func HashPassword(pw string) (string, error) {
 
 func CheckPassword(hash, pw string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(pw))
+}
+func GenerateRandomString() string {
+	b := make([]byte, 32)
+	rand.Read(b)
+	return base64.RawURLEncoding.EncodeToString(b)
 }

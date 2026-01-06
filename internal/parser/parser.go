@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/syed.fazil/vtask/internal/config"
 	pb "github.com/syed.fazil/vtask/internal/proto/nlp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,7 +17,8 @@ type Intent struct {
 }
 
 func ParseIntent(ctx context.Context, transcription string) Intent {
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	cfg := config.App
+	conn, err := grpc.NewClient(cfg.NLPServer, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect to nlp service: %v", err)
 	}

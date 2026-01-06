@@ -4,13 +4,25 @@ package db
 import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-func InitDB(dbPath string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+type Config struct {
+	Path  string
+	Debug bool
+}
+
+func Open(cfg Config) (*gorm.DB, error) {
+	gormCfg := &gorm.Config{}
+	if cfg.Debug {
+		gormCfg.Logger = logger.Default.LogMode(logger.Info)
+	}
+	db, err := gorm.Open(sqlite.Open(cfg.Path), gormCfg)
 	if err != nil {
 		return nil, err
 	}
+	sqlDB, err := db.DB()
+	sqlDB.SetMaxOpenConns(1)
 	return db, nil
-}
 
+}
