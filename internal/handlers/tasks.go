@@ -47,7 +47,7 @@ func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, task)
+	c.JSON(http.StatusCreated, gin.H{"message": "Task created successfully"})
 }
 
 // Handler to get all tasks
@@ -57,5 +57,25 @@ func GetTasksHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, tasks)
+	response := make([]schemas.TaskResponse, 0, len(tasks))
+	for _, task := range tasks {
+		response = append(response, taskToResponse(task))
+	}
+	c.JSON(http.StatusOK, response)
+}
+
+func taskToResponse(task models.Task) schemas.TaskResponse {
+	var dueAt *string
+	if task.DueAt != nil {
+		s := task.DueAt.Format(time.RFC3339)
+		dueAt = &s
+	}
+
+	return schemas.TaskResponse{
+		ID:        task.ID,
+		Title:     task.Name,
+		Content:   task.Content,
+		DueAt:     dueAt,
+		CreatedAt: task.CreatedAt.Format(time.RFC3339),
+	}
 }

@@ -13,3 +13,11 @@ type UpdateTaskInput struct {
 	Name      string `json:"name"`
 	Completed bool   `json:"completed"`
 }
+
+type TaskResponse struct {
+	ID        uint    `json:"id"`
+	Title     string  `json:"title"`
+	Content   string  `json:"content"`
+	DueAt     *string `json:"due_at"`
+	CreatedAt string  `json:"created_at"`
+}
