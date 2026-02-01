@@ -109,16 +109,16 @@ func GetUserProfileHandler(c *gin.Context, db *gorm.DB) {
 	dbWithCtx := db.WithContext(c.Request.Context())
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 	var user models.User
 	if err := dbWithCtx.Model(&models.User{}).Where("id = ?", userID).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	profile := schemas.UserProfileDataResponse{
@@ -132,7 +132,7 @@ func GetUserProfileHandler(c *gin.Context, db *gorm.DB) {
 func InitiateGoogleSSOAuthHandler(c *gin.Context) {
 	oauth2Config, err := utils.NewOauth2Config(c)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	state := utils.GenerateRandomString()
@@ -146,35 +146,35 @@ func GoogleSSOCallbackHandler(c *gin.Context, db *gorm.DB) {
 	cfg := config.App
 	oauth2Config, err := utils.NewOauth2Config(c)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	stateFromCookie, err := c.Cookie("state")
 	if err != nil || stateFromGoogleQuery != stateFromCookie {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Invalid OAuth state",
 		})
 		return
 	}
 	oauth2Token, err := oauth2Config.Exchange(c.Request.Context(), c.Query("code"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	provider, err := utils.NewOIDCProvider(c.Request.Context())
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	verifier := provider.Verifier(&oidc.Config{ClientID: cfg.OAuthGoogleClientID})
 	idToken, err := verifier.Verify(c.Request.Context(), rawIDToken)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 	var claims struct {
@@ -182,7 +182,7 @@ func GoogleSSOCallbackHandler(c *gin.Context, db *gorm.DB) {
 		Verified bool   `json:"email_verified"`
 	}
 	if err := idToken.Claims(&claims); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
@@ -199,7 +199,7 @@ func GoogleSSOCallbackHandler(c *gin.Context, db *gorm.DB) {
 	)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Internal server error",
 		})
 		return

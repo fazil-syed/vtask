@@ -2,7 +2,7 @@ package db
 
 // we will have a function that initializes the database connection using gorm and returns the gorm DB instance
 import (
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -17,7 +17,7 @@ func Open(cfg Config) (*gorm.DB, error) {
 	if cfg.Debug {
 		gormCfg.Logger = logger.Default.LogMode(logger.Info)
 	}
-	db, err := gorm.Open(sqlite.Open(cfg.Path), gormCfg)
+	db, err := gorm.Open(postgres.Open(cfg.Path), gormCfg)
 	if err != nil {
 		return nil, err
 	}

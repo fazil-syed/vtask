@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/go-playground/validator/v10"
@@ -16,7 +17,6 @@ func Init() {
 	viper.AutomaticEnv()
 	// Defaults
 	viper.SetDefault("UPLOAD_PATH", "./uploads")
-	viper.SetDefault("DATABASE_PATH", "app.db")
 	viper.SetDefault("MAX_UPLOAD_SIZE", int64(10*1024*1024))
 	viper.SetDefault("STT_PROVIDER", "stub")
 	viper.SetDefault("SERVER_PORT", 8080)
@@ -27,7 +27,7 @@ func Init() {
 
 	cfg := &Config{
 		UploadPath:              viper.GetString("UPLOAD_PATH"),
-		DatabasePath:            viper.GetString("DATABASE_PATH"),
+		DatabasePath:            fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", viper.GetString("DB_HOST"), viper.GetString("DB_USER"), viper.GetString("DB_PASSWORD"), viper.GetString("DB_NAME"), viper.GetString("DB_PORT")),
 		MaxUploadSize:           viper.GetInt64("MAX_UPLOAD_SIZE"),
 		STTProvider:             viper.GetString("STT_PROVIDER"),
 		ServerPort:              viper.GetInt("SERVER_PORT"),
