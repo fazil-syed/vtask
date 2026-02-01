@@ -2,8 +2,10 @@ package schemas
 
 // create a schema for creating a task
 type CreateTaskInput struct {
-	Name      string `json:"name" binding:"required"`
-	Completed bool   `json:"completed"`
+	Title    string  `json:"title" binding:"required"`
+	Content  string  `json:"content" binding:"required"`
+	DueDate  *string `json:"due_date"`
+	Timezone string  `json:"timezone"`
 }
 
 // create a schema for updating a task

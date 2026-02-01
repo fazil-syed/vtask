@@ -13,11 +13,11 @@ func RegisterTaskRoutes(router *gin.Engine, db *gorm.DB) {
 
 	taskGroup := router.Group("/tasks")
 	taskGroup.Use(middlewares.CheckCurrentUser())
-	taskGroup.POST("/", func(c *gin.Context) {
+	taskGroup.POST("", func(c *gin.Context) {
 		handlers.CreateTaskHandler(c, db)
 	})
 	// route to get all tasks
-	taskGroup.GET("/", func(c *gin.Context) {
+	taskGroup.GET("", func(c *gin.Context) {
 		handlers.GetTasksHandler(c, db)
 	})
 }

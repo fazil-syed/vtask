@@ -10,6 +10,7 @@ type Task struct {
 	gorm.Model
 	Name       string     `json:"name" binding:"required"`
 	Completed  bool       `json:"completed"`
+	Content    string     `json:"content"`
 	DueAt      *time.Time `json:"due_at,omitempty"`
 	ReminderAt *time.Time `json:"reminder_at,omitempty"`
 }
