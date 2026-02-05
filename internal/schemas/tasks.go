@@ -3,7 +3,7 @@ package schemas
 // create a schema for creating a task
 type CreateTaskInput struct {
 	Title    string  `json:"title" binding:"required"`
-	Content  string  `json:"content" binding:"required"`
+	Content  string  `json:"content"`
 	DueDate  *string `json:"due_date"`
 	Timezone string  `json:"timezone"`
 }

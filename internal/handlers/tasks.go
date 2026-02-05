@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -37,11 +38,25 @@ func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
 		}
 		dueAt = &t
 	}
+	strUserId, exists := c.Get("user_id")
+
+	if !exists {
+		log.Println("User id not found")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	userId, ok := strUserId.(uint)
+	if !ok {
+		log.Println("Invalid user")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
 	task := models.Task{
 		Name:      taskSchema.Title,
 		Completed: false,
 		Content:   taskSchema.Content,
 		DueAt:     dueAt,
+		UserId:    userId,
 	}
 	if err := db.WithContext(c.Request.Context()).Create(&task).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -52,9 +67,23 @@ func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
 
 // Handler to get all tasks
 func GetTasksHandler(c *gin.Context, db *gorm.DB) {
+	strUserId, exists := c.Get("user_id")
+
+	if !exists {
+		log.Println("User id not found")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	userId, ok := strUserId.(uint)
+	if !ok {
+		log.Println("Invalid user")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
 	var tasks []models.Task
-	if err := db.WithContext(c.Request.Context()).Find(&tasks).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := db.WithContext(c.Request.Context()).Where("user_id = ?", userId).Find(&tasks).Error; err != nil {
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
 	response := make([]schemas.TaskResponse, 0, len(tasks))
@@ -78,4 +107,48 @@ func taskToResponse(task models.Task) schemas.TaskResponse {
 		DueAt:     dueAt,
 		CreatedAt: task.CreatedAt.Format(time.RFC3339),
 	}
+}
+
+func MarkTaskCompletedHandler(c *gin.Context, db *gorm.DB) {
+	strUserId, exists := c.Get("user_id")
+
+	if !exists {
+		log.Println("User id not found")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	userId, ok := strUserId.(uint)
+	if !ok {
+		log.Println("Invalid user")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	taskId := c.Param("task_id")
+	intTaskId, err := strconv.Atoi(taskId)
+	if err != nil {
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
+
+	var task models.Task
+	if err := db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			return
+		}
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
+	isCompleted := task.Completed
+	if isCompleted {
+		c.JSON(http.StatusOK, gin.H{"message": "Task already marked as completed"})
+		return
+	}
+	task.Completed = true
+	db.WithContext(c.Request.Context()).Model(task).Update("completed", true)
+	c.JSON(http.StatusOK, gin.H{"message": "Task marked as completed"})
+	return
+
 }

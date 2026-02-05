@@ -7,4 +7,5 @@ type User struct {
 	UserName     *string    `json:"user_name,omitempty" gorm:"unique;"`
 	PrimaryEmail *string    `json:"email,omitempty" gorm:"index"`
 	Identities   []Identity `json:"-"`
+	Tasks        []Task
 }
