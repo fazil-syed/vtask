@@ -20,13 +20,16 @@ func RegisterTaskRoutes(router *gin.Engine, db *gorm.DB) {
 	taskGroup.GET("", func(c *gin.Context) {
 		handlers.GetTasksHandler(c, db)
 	})
-	taskGroup.POST("/mark-complete/:task_id", func(ctx *gin.Context) {
+	taskGroup.PATCH("/mark-complete/:task_id", func(ctx *gin.Context) {
 		handlers.MarkTaskCompletedHandler(ctx, db)
 	})
-	taskGroup.POST("/mark-incomplete/:task_id", func(ctx *gin.Context) {
+	taskGroup.PATCH("/mark-incomplete/:task_id", func(ctx *gin.Context) {
 		handlers.MarkTaskInCompletedHandler(ctx, db)
 	})
 	taskGroup.DELETE("/delete/:task_id", func(ctx *gin.Context) {
 		handlers.DeleteTaskHandler(ctx, db)
+	})
+	taskGroup.PATCH("/edit/:task_id", func(ctx *gin.Context) {
+		handlers.EditTaskHandler(ctx, db)
 	})
 }

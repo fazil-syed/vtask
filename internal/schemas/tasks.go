@@ -7,11 +7,11 @@ type CreateTaskInput struct {
 	DueDate  *string `json:"due_date"`
 	Timezone string  `json:"timezone"`
 }
-
-// create a schema for updating a task
-type UpdateTaskInput struct {
-	Name      string `json:"name"`
-	Completed bool   `json:"completed"`
+type EditTaskInput struct {
+	Title    string  `json:"title"`
+	Content  string  `json:"content"`
+	DueDate  *string `json:"due_date"`
+	Timezone string  `json:"timezone"`
 }
 
 type TaskResponse struct {
