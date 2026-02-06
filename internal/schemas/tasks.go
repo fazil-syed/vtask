@@ -20,4 +20,5 @@ type TaskResponse struct {
 	Content   string  `json:"content"`
 	DueAt     *string `json:"due_at"`
 	CreatedAt string  `json:"created_at"`
+	Completed bool    `json:"completed"`
 }

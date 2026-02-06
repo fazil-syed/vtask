@@ -59,7 +59,8 @@ func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
 		UserId:    userId,
 	}
 	if err := db.WithContext(c.Request.Context()).Create(&task).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"message": "Task created successfully"})
@@ -105,6 +106,7 @@ func taskToResponse(task models.Task) schemas.TaskResponse {
 		Title:     task.Name,
 		Content:   task.Content,
 		DueAt:     dueAt,
+		Completed: task.Completed,
 		CreatedAt: task.CreatedAt.Format(time.RFC3339),
 	}
 }
@@ -127,7 +129,7 @@ func MarkTaskCompletedHandler(c *gin.Context, db *gorm.DB) {
 	intTaskId, err := strconv.Atoi(taskId)
 	if err != nil {
 		log.Printf("ERROR : %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task id"})
 		return
 	}
 
@@ -146,9 +148,92 @@ func MarkTaskCompletedHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusOK, gin.H{"message": "Task already marked as completed"})
 		return
 	}
-	task.Completed = true
-	db.WithContext(c.Request.Context()).Model(task).Update("completed", true)
+	err = db.WithContext(c.Request.Context()).Model(&task).Update("completed", true).Error
+	if err != nil {
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Task marked as completed"})
+	return
+
+}
+
+func MarkTaskInCompletedHandler(c *gin.Context, db *gorm.DB) {
+	strUserId, exists := c.Get("user_id")
+
+	if !exists {
+		log.Println("User id not found")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	userId, ok := strUserId.(uint)
+	if !ok {
+		log.Println("Invalid user")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	taskId := c.Param("task_id")
+	intTaskId, err := strconv.Atoi(taskId)
+	if err != nil {
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task id"})
+		return
+	}
+
+	var task models.Task
+	if err := db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+			return
+		}
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
+	isCompleted := task.Completed
+	if !isCompleted {
+		c.JSON(http.StatusOK, gin.H{"message": "Task already marked as not completed"})
+		return
+	}
+	err = db.WithContext(c.Request.Context()).Model(&task).Update("completed", false).Error
+	if err != nil {
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Task marked as not completed"})
+	return
+
+}
+
+func DeleteTaskHandler(c *gin.Context, db *gorm.DB) {
+	strUserId, exists := c.Get("user_id")
+
+	if !exists {
+		log.Println("User id not found")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	userId, ok := strUserId.(uint)
+	if !ok {
+		log.Println("Invalid user")
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	taskId := c.Param("task_id")
+	intTaskId, err := strconv.Atoi(taskId)
+	if err != nil {
+		log.Printf("ERROR : %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task id"})
+		return
+	}
+	res := db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).Delete(&models.Task{})
+	if res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Task deleted"})
 	return
 
 }
