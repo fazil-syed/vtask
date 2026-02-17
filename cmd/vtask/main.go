@@ -26,10 +26,10 @@ func main() {
 		log.Fatalf("Failed to open database: %v", err)
 	}
 	// auto migrate task model
-	// err = db.Migrate(dbConn)
-	// if err != nil {
-	// 	log.Fatalf("Failed to migrate database: %v", err)
-	// }
+	err = db.Migrate(dbConn)
+	if err != nil {
+		log.Fatalf("Failed to migrate database: %v", err)
+	}
 	// setup server
 	router := server.New(server.Config{
 		DB:            dbConn,
@@ -40,4 +40,5 @@ func main() {
 	addr := fmt.Sprintf(":%d", cfg.ServerPort)
 	log.Printf("Starting server on %s", addr)
 	log.Fatal(router.Run(addr))
+
 }

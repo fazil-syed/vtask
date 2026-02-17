@@ -12,4 +12,6 @@ type Config struct {
 	JWTSecret               string `validate:"required"`
 	NLPServer               string `validate:"required"`
 	APPUIBaseURL            string `validate:"required"`
+	VAPID_PRIVATE_KEY       string `validate:"required"`
+	VAPID_PUBLIC_KEY        string `validate:"required"`
 }

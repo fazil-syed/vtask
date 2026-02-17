@@ -63,6 +63,22 @@ func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
+
+	// create reminders
+	for _, r := range taskSchema.Reminders {
+		var remindAt time.Time
+		if r.OffsetMinutes != nil && task.DueAt != nil {
+			remindAt = task.DueAt.Add(-time.Duration(*r.OffsetMinutes) * time.Minute)
+		} else {
+			continue
+		}
+		if err := db.WithContext(c.Request.Context()).Create(&models.Reminder{TaskID: task.ID, RemindAt: remindAt}).Error; err != nil {
+			log.Printf("ERROR : %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+			return
+		}
+	}
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Task created successfully"})
 }
 

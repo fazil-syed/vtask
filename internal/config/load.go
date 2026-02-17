@@ -23,7 +23,7 @@ func Init() {
 	viper.SetDefault("APP_BASE_URL", "http://localhost:8080")
 	viper.SetDefault("JWT_SECRET", "JWT_SECRET")
 	viper.SetDefault("NLP_SERVER", "localhost:50051")
-	viper.SetDefault("APP_UI_BASE_URL", "http://localhost:5173")
+	viper.SetDefault("APP_UI_BASE_URL", "http://localhost:3000")
 
 	cfg := &Config{
 		UploadPath:              viper.GetString("UPLOAD_PATH"),
@@ -37,6 +37,8 @@ func Init() {
 		JWTSecret:               viper.GetString("JWT_SECRET"),
 		NLPServer:               viper.GetString("NLP_SERVER"),
 		APPUIBaseURL:            viper.GetString("APP_UI_BASE_URL"),
+		VAPID_PUBLIC_KEY:        viper.GetString("VAPID_PUBLIC"),
+		VAPID_PRIVATE_KEY:       viper.GetString("VAPID_PRIVATE"),
 	}
 	validate := validator.New()
 	if err := validate.Struct(cfg); err != nil {
