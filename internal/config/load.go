@@ -39,6 +39,7 @@ func Init() {
 		APPUIBaseURL:            viper.GetString("APP_UI_BASE_URL"),
 		VAPID_PUBLIC_KEY:        viper.GetString("VAPID_PUBLIC"),
 		VAPID_PRIVATE_KEY:       viper.GetString("VAPID_PRIVATE"),
+		AllowedOrigins:          viper.GetStringSlice("ALLOWED_ORIGINS"),
 	}
 	validate := validator.New()
 	if err := validate.Struct(cfg); err != nil {

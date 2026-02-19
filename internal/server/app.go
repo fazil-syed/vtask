@@ -9,15 +9,16 @@ import (
 )
 
 type Config struct {
-	DB            *gorm.DB
-	UploadPath    string
-	MaxUploadSize int64
+	DB             *gorm.DB
+	UploadPath     string
+	MaxUploadSize  int64
+	AllowedOrigins []string
 }
 
 func New(cfg Config) *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"},
+		AllowOrigins:     cfg.AllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,

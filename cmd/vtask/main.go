@@ -32,9 +32,10 @@ func main() {
 	}
 	// setup server
 	router := server.New(server.Config{
-		DB:            dbConn,
-		UploadPath:    cfg.UploadPath,
-		MaxUploadSize: cfg.MaxUploadSize,
+		DB:             dbConn,
+		UploadPath:     cfg.UploadPath,
+		MaxUploadSize:  cfg.MaxUploadSize,
+		AllowedOrigins: cfg.AllowedOrigins,
 	})
 	// start server
 	addr := fmt.Sprintf(":%d", cfg.ServerPort)
