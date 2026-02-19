@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
@@ -39,7 +40,10 @@ func Init() {
 		APPUIBaseURL:            viper.GetString("APP_UI_BASE_URL"),
 		VAPID_PUBLIC_KEY:        viper.GetString("VAPID_PUBLIC"),
 		VAPID_PRIVATE_KEY:       viper.GetString("VAPID_PRIVATE"),
-		AllowedOrigins:          viper.GetStringSlice("ALLOWED_ORIGINS"),
+		AllowedOrigins: strings.Split(
+			viper.GetString("ALLOWED_ORIGINS"),
+			",",
+		),
 	}
 	validate := validator.New()
 	if err := validate.Struct(cfg); err != nil {
