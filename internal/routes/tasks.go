@@ -10,26 +10,31 @@ import (
 
 func RegisterTaskRoutes(router *gin.Engine, db *gorm.DB) {
 	// route to create a new task
-
+	newTaskStream := handlers.GetTaskStream()
+	taskHandlers := handlers.NewTaskHandler(newTaskStream, db)
 	taskGroup := router.Group("/tasks")
 	taskGroup.Use(middlewares.CheckCurrentUser())
 	taskGroup.POST("", func(c *gin.Context) {
-		handlers.CreateTaskHandler(c, db)
+		taskHandlers.CreateTaskHandler(c)
 	})
+
 	// route to get all tasks
 	taskGroup.GET("", func(c *gin.Context) {
-		handlers.GetTasksHandler(c, db)
+		taskHandlers.GetTasksHandler(c)
 	})
 	taskGroup.PATCH("/mark-complete/:task_id", func(ctx *gin.Context) {
-		handlers.MarkTaskCompletedHandler(ctx, db)
+		taskHandlers.MarkTaskCompletedHandler(ctx)
 	})
 	taskGroup.PATCH("/mark-incomplete/:task_id", func(ctx *gin.Context) {
-		handlers.MarkTaskInCompletedHandler(ctx, db)
+		taskHandlers.MarkTaskInCompletedHandler(ctx)
 	})
 	taskGroup.DELETE("/delete/:task_id", func(ctx *gin.Context) {
-		handlers.DeleteTaskHandler(ctx, db)
+		taskHandlers.DeleteTaskHandler(ctx)
 	})
 	taskGroup.PATCH("/edit/:task_id", func(ctx *gin.Context) {
-		handlers.EditTaskHandler(ctx, db)
+		taskHandlers.EditTaskHandler(ctx)
+	})
+	taskGroup.GET("/stream", newTaskStream.SSEConnMiddleware(), func(ctx *gin.Context) {
+		newTaskStream.TaskStreamHandler(ctx)
 	})
 }

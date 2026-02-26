@@ -12,8 +12,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type TaskHandler struct {
+	taskStream *Stream
+	db         *gorm.DB
+}
+
+func NewTaskHandler(stream *Stream, db *gorm.DB) (taskHandler *TaskHandler) {
+	return &TaskHandler{
+		taskStream: stream,
+		db:         db,
+	}
+}
+
 // Handler to create a new task
-func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
+func (handler *TaskHandler) CreateTaskHandler(c *gin.Context) {
 	// use schema from schemas package to bind the request body
 	// and use the models package for the Task model
 	var taskSchema schemas.CreateTaskInput
@@ -58,7 +70,7 @@ func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
 		DueAt:     dueAt,
 		UserId:    userId,
 	}
-	if err := db.WithContext(c.Request.Context()).Create(&task).Error; err != nil {
+	if err := handler.db.WithContext(c.Request.Context()).Create(&task).Error; err != nil {
 		log.Printf("ERROR : %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
@@ -72,18 +84,22 @@ func CreateTaskHandler(c *gin.Context, db *gorm.DB) {
 		} else {
 			continue
 		}
-		if err := db.WithContext(c.Request.Context()).Create(&models.Reminder{TaskID: task.ID, RemindAt: remindAt}).Error; err != nil {
+		if err := handler.db.WithContext(c.Request.Context()).Create(&models.Reminder{TaskID: task.ID, RemindAt: remindAt}).Error; err != nil {
 			log.Printf("ERROR : %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 			return
 		}
 	}
-
+	handler.taskStream.SendEvent(Data{
+		Message: "New Task added",
+		To:      userId,
+		Type:    "NEW_TASK_CREATED",
+	})
 	c.JSON(http.StatusCreated, gin.H{"message": "Task created successfully"})
 }
 
 // Handler to get all tasks
-func GetTasksHandler(c *gin.Context, db *gorm.DB) {
+func (handler *TaskHandler) GetTasksHandler(c *gin.Context) {
 	strUserId, exists := c.Get("user_id")
 
 	if !exists {
@@ -98,7 +114,7 @@ func GetTasksHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	var tasks []models.Task
-	if err := db.WithContext(c.Request.Context()).Where("user_id = ?", userId).Order("id DESC").Find(&tasks).Error; err != nil {
+	if err := handler.db.WithContext(c.Request.Context()).Where("user_id = ?", userId).Order("id DESC").Find(&tasks).Error; err != nil {
 		log.Printf("ERROR : %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
@@ -127,7 +143,7 @@ func taskToResponse(task models.Task) schemas.TaskResponse {
 	}
 }
 
-func MarkTaskCompletedHandler(c *gin.Context, db *gorm.DB) {
+func (handler *TaskHandler) MarkTaskCompletedHandler(c *gin.Context) {
 	strUserId, exists := c.Get("user_id")
 
 	if !exists {
@@ -150,7 +166,7 @@ func MarkTaskCompletedHandler(c *gin.Context, db *gorm.DB) {
 	}
 
 	var task models.Task
-	if err := db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
+	if err := handler.db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 			return
@@ -164,18 +180,24 @@ func MarkTaskCompletedHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusOK, gin.H{"message": "Task already marked as completed"})
 		return
 	}
-	err = db.WithContext(c.Request.Context()).Model(&task).Update("completed", true).Error
+	err = handler.db.WithContext(c.Request.Context()).Model(&task).Update("completed", true).Error
 	if err != nil {
 		log.Printf("ERROR : %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Task marked as completed"})
+
+	handler.taskStream.SendEvent(Data{
+		Message: "Task marked as completed",
+		To:      userId,
+		Type:    "TASK_UPDATED",
+	})
 	return
 
 }
 
-func MarkTaskInCompletedHandler(c *gin.Context, db *gorm.DB) {
+func (handler *TaskHandler) MarkTaskInCompletedHandler(c *gin.Context) {
 	strUserId, exists := c.Get("user_id")
 
 	if !exists {
@@ -198,7 +220,7 @@ func MarkTaskInCompletedHandler(c *gin.Context, db *gorm.DB) {
 	}
 
 	var task models.Task
-	if err := db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
+	if err := handler.db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 			return
@@ -212,18 +234,23 @@ func MarkTaskInCompletedHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusOK, gin.H{"message": "Task already marked as not completed"})
 		return
 	}
-	err = db.WithContext(c.Request.Context()).Model(&task).Update("completed", false).Error
+	err = handler.db.WithContext(c.Request.Context()).Model(&task).Update("completed", false).Error
 	if err != nil {
 		log.Printf("ERROR : %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Task marked as not completed"})
+	handler.taskStream.SendEvent(Data{
+		Message: "Task marked as incompleted",
+		To:      userId,
+		Type:    "TASK_UPDATED",
+	})
 	return
 
 }
 
-func DeleteTaskHandler(c *gin.Context, db *gorm.DB) {
+func (handler *TaskHandler) DeleteTaskHandler(c *gin.Context) {
 	strUserId, exists := c.Get("user_id")
 
 	if !exists {
@@ -244,17 +271,22 @@ func DeleteTaskHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task id"})
 		return
 	}
-	res := db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).Delete(&models.Task{})
+	res := handler.db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).Delete(&models.Task{})
 	if res.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Task deleted"})
+	handler.taskStream.SendEvent(Data{
+		Message: "Task has been deleted",
+		To:      userId,
+		Type:    "TASK_DELETED",
+	})
 	return
 
 }
 
-func EditTaskHandler(c *gin.Context, db *gorm.DB) {
+func (handler *TaskHandler) EditTaskHandler(c *gin.Context) {
 	strUserId, exists := c.Get("user_id")
 
 	if !exists {
@@ -299,7 +331,7 @@ func EditTaskHandler(c *gin.Context, db *gorm.DB) {
 	}
 
 	var task models.Task
-	if err := db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
+	if err := handler.db.WithContext(c.Request.Context()).Where("user_id = ? AND id = ?", userId, intTaskId).First(&task).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 			return
@@ -322,13 +354,19 @@ func EditTaskHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No changes to update"})
 		return
 	}
-	err = db.WithContext(c.Request.Context()).Model(&task).Updates(updates).Error
+	err = handler.db.WithContext(c.Request.Context()).Model(&task).Updates(updates).Error
 	if err != nil {
 		log.Printf("ERROR : %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Task updated successfully"})
+
+	handler.taskStream.SendEvent(Data{
+		Message: "Task Updated",
+		To:      userId,
+		Type:    "TASK_UPDATED",
+	})
 	return
 
 }
