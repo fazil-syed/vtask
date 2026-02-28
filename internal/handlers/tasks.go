@@ -93,7 +93,7 @@ func (handler *TaskHandler) CreateTaskHandler(c *gin.Context) {
 	handler.taskStream.SendEvent(Data{
 		Message: "New Task added",
 		To:      userId,
-		Type:    "NEW_TASK_CREATED",
+		Type:    "TASK_CREATED",
 	})
 	c.JSON(http.StatusCreated, gin.H{"message": "Task created successfully"})
 }
